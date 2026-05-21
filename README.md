@@ -1,164 +1,218 @@
 # Nexus Platform
 
-> Cloud-native DevSecOps & backend platform for secure CI/CD, Kubernetes orchestration, microservices architecture, and production-grade cloud infrastructure.
+**Cloud-native DevSecOps & backend platform — secure CI/CD, Kubernetes orchestration, microservices architecture, and production-grade infrastructure.**
+
+Built to demonstrate how modern systems are secured, deployed, and monitored across the full software delivery lifecycle — not just how they are coded.
 
 ---
 
-# 🚀 Overview
+## Why this project exists
 
-**Nexus Platform** is a production-grade DevSecOps and backend engineering system designed to simulate how modern large-scale cloud applications are built, secured, deployed, and monitored in real-world environments.
+Most portfolio projects show that someone can write code. This one is built to show something harder: that I understand how code gets to production securely, reliably, and at scale.
 
-It integrates backend systems, cloud infrastructure, DevSecOps automation, and distributed system design into a single unified platform.
-
----
-
-# 🎯 Key Focus Areas
-
-* DevSecOps automation (CI/CD + security integration)
-* Backend microservices architecture
-* Cloud-native infrastructure design
-* Kubernetes orchestration
-* System reliability and scalability
-* Secure software delivery lifecycle
+The gap between "I wrote a working app" and "I know how to ship it safely in a real organisation" is exactly what this platform is designed to close.
 
 ---
 
-# 🧠 Problem Statement
+## System architecture
 
-Modern software systems require:
+```
+Client Requests
+      │
+      ▼
+┌─────────────┐
+│  API Gateway │  ← Authentication, rate limiting, routing
+└──────┬──────┘
+       │
+  ┌────┴────┐
+  │         │
+  ▼         ▼
+Service A  Service B  (independent microservices)
+  │         │
+  └────┬────┘
+       │
+  ┌────▼─────┐      ┌──────────────┐
+  │ PostgreSQL│      │  Redis Cache │
+  └──────────┘      └──────────────┘
+       │
+  ┌────▼──────────┐
+  │  Kubernetes   │  ← Orchestration, scaling, RBAC
+  └───────────────┘
+       │
+  ┌────▼──────────┐
+  │ AWS (Terraform)│  ← Infrastructure as Code
+  └───────────────┘
+```
 
-* Secure and automated deployments
-* Scalable backend architectures
-* Continuous security scanning
-* Real-time monitoring and observability
-* Reliable infrastructure management
-
-**Nexus Platform demonstrates how these requirements are implemented in a production-like system.**
-
----
-
-# 🏗️ System Architecture
-
-The platform follows a distributed microservices architecture:
-
-* API Gateway for routing, authentication, and rate limiting
-* Independent backend microservices
-* Message queue for asynchronous communication
-* Kubernetes for container orchestration and scaling
-* Infrastructure as Code for cloud provisioning
-
----
-
-# ⚙️ Tech Stack
-
-## Backend
-
-* Go / Node.js
-* REST APIs / gRPC
-* PostgreSQL
-* Redis
-* Kafka / RabbitMQ
-
-## DevOps
-
-* Docker
-* Kubernetes
-* GitHub Actions / Jenkins
-* Terraform (Infrastructure as Code)
-
-## DevSecOps (Security)
-
-* SAST / DAST pipelines
-* Trivy container scanning
-* OWASP security testing
-* Secrets management
-* RBAC-based authentication
-
-## Observability
-
-* Prometheus (metrics)
-* Grafana (dashboards)
-* OpenTelemetry (tracing)
-* Centralized logging
-
-## Cloud
-
-* AWS (primary deployment environment)
+**Why microservices over a monolith?**
+Each service can be scanned, deployed, and rolled back independently. In a security context this matters — a vulnerability in one service doesn't require redeploying everything, and blast radius is contained.
 
 ---
 
-# 🔐 Security Features
+## Tech stack
 
-* JWT-based authentication system
-* Role-Based Access Control (RBAC)
-* Container vulnerability scanning
-* Dependency security analysis
-* Secrets management system
-* Runtime threat detection
-* Policy-based deployment enforcement
+### Backend
+| Layer | Technology | Why |
+|---|---|---|
+| Runtime | Node.js | Fast prototyping, strong ecosystem for REST and middleware |
+| API design | REST / Express | Straightforward for demonstrating input validation and auth flows |
+| Database | PostgreSQL | Relational integrity for auth and user data |
+| Cache | Redis | Session management and rate-limit counters |
 
----
+### DevSecOps
+| Tool | Purpose |
+|---|---|
+| Docker | Container image build and hardening |
+| Kubernetes | Orchestration, horizontal scaling, pod security policies |
+| GitHub Actions | CI/CD pipeline automation |
+| Terraform | AWS infrastructure provisioned as code — reproducible, version-controlled |
 
-# 🔄 CI/CD Pipeline
+### Security pipeline
+| Tool | Stage | Why at this stage |
+|---|---|---|
+| SAST scanner | Pull request | Catches insecure code patterns before merge — cheapest point to fix |
+| Trivy | Post-build | Scans container images for known CVEs before any deployment |
+| DAST | Staging environment | Needs a running application to probe — run against staging, never production |
+| Secrets scanner | Pre-commit + CI | Prevents credentials reaching the repository at all |
 
-* Automated build and testing pipeline
-* Security checks before deployment
-* Approval-based deployment system
-* Blue-green and rolling deployments
-* Automatic rollback on failure
-
----
-
-# 📊 Observability System
-
-* Real-time system metrics monitoring
-* Distributed tracing across services
-* Centralized logging pipeline
-* Alerting system for anomalies and failures
-
----
-
-# 📌 Core Features
-
-* Scalable microservices architecture
-* Secure API gateway
-* Cloud-native deployment system
-* Full DevSecOps automation pipeline
-* Real-time observability dashboard
-* Infrastructure as Code support
+### Observability
+| Tool | Role |
+|---|---|
+| Prometheus | Metrics collection — CPU, memory, request latency, error rates |
+| Grafana | Dashboards and alerting thresholds |
+| Centralized logging | Aggregated logs across all services for incident investigation |
 
 ---
 
-# 🎯 Use Cases
+## Security design decisions
 
-* DevSecOps engineering portfolio project
-* Cloud backend infrastructure simulation
-* Distributed systems learning platform
-* Platform engineering demonstration system
-* Production-grade system design showcase
+### Why SAST at PR stage, not just pre-deploy?
+Fixing a security issue at code review costs a fraction of fixing it post-deployment. Running SAST on every pull request means insecure patterns never reach the main branch.
 
----
+### Why Trivy for container scanning over manual review?
+Container images pull in hundreds of transitive dependencies. Trivy automates CVE detection across the full image layer stack — something no manual review can do at speed.
 
-# 📈 Why This Project Matters
+### Why DAST on staging and not production?
+DAST actively probes a running application for vulnerabilities. Running it on production risks real user impact and triggers alerts. Staging gives a realistic target without the risk.
 
-This project demonstrates real-world engineering capabilities:
+### Why Kubernetes secrets with a secrets manager over environment variables?
+Environment variables leak into logs, crash reports, and process listings. A secrets manager gives rotation, audit trails, and least-privilege access. Env vars have none of these.
 
-* Backend system design
-* Cloud infrastructure knowledge
-* DevSecOps implementation skills
-* Scalable architecture understanding
-* Production-level engineering mindset
-
-It is designed to align with modern backend, DevOps, and platform engineering roles.
+### Why RBAC at the Kubernetes level?
+RBAC limits what each pod, service account, and user can do inside the cluster. Without it, a compromised container can access secrets and resources across the entire cluster.
 
 ---
 
-# 🧑‍💻 Author
+## CI/CD pipeline
 
-Built as a high-impact backend + DevSecOps portfolio project focused on real-world system design, cloud infrastructure, and production engineering practices.
+```
+Code push / PR opened
+        │
+        ▼
+  SAST scan + secrets scan
+        │
+        ▼ (pass)
+  Automated tests
+        │
+        ▼ (pass)
+  Docker image build
+        │
+        ▼
+  Trivy container scan
+        │
+        ▼ (pass)
+  Deploy to staging
+        │
+        ▼
+  DAST scan on staging
+        │
+        ▼ (pass)
+  Approval gate → deploy to production
+        │
+        ▼
+  Rollback triggered automatically on failure
+```
+
+**Why an approval gate before production?**
+Automated checks catch known issues. An approval gate ensures a human reviews the deployment intent, particularly for infrastructure changes where automation can be wrong in ways tools don't catch.
 
 ---
 
-# 📜 License
+## Trade-offs made
 
-This project is licensed under the MIT License.
+| Decision | What was gained | What was traded |
+|---|---|---|
+| Kubernetes over serverless | Full control over pod security, network policies, RBAC | More operational complexity to manage |
+| SAST at PR stage | Earlier detection, lower fix cost | Slightly slower PR review cycle |
+| Terraform IaC over console provisioning | Reproducible, auditable infrastructure | Higher initial setup time |
+| Microservices over monolith | Independent deployment and blast-radius containment | More inter-service complexity |
+| PostgreSQL over NoSQL | Strong consistency for auth/user data | Less flexible for unstructured data |
+
+---
+
+## What is implemented
+
+- [x] API gateway with authentication and rate limiting
+- [x] Microservices architecture with independent deployments
+- [x] Docker containerisation with image hardening
+- [x] Kubernetes orchestration with RBAC and pod security
+- [x] Terraform IaC for AWS infrastructure provisioning
+- [x] CI/CD pipeline with GitHub Actions
+- [x] SAST integration at pull request stage
+- [x] Trivy container image scanning
+- [x] Secrets management system
+- [x] DAST scanning against staging environment
+- [x] Prometheus metrics collection
+- [x] Grafana dashboards
+- [ ] OpenTelemetry distributed tracing — in progress
+- [ ] Kubernetes network policies for pod-to-pod traffic control
+- [ ] Supply chain security (SBOM generation, Sigstore signing)
+
+---
+
+## What I would add next and why
+
+**Kubernetes network policies**
+Currently RBAC controls who can do what, but pod-to-pod traffic is unrestricted within the cluster. Network policies would enforce that Service A can only talk to the database, not to Service B — least-privilege at the network level.
+
+**SBOM generation**
+A Software Bill of Materials gives a full inventory of every dependency in the build. With supply chain attacks increasing, knowing exactly what is in a container image matters as much as scanning it.
+
+**OpenTelemetry tracing**
+Prometheus tells you a request is slow. Distributed tracing tells you which service in the chain is causing it. For a microservices system this is the difference between guessing and knowing.
+
+---
+
+## Local setup
+
+```bash
+git clone https://github.com/Rahulkumar240/nexus-platform
+cd nexus-platform
+docker-compose up --build
+```
+
+Kubernetes deployment:
+```bash
+kubectl apply -f k8s/
+```
+
+Terraform provisioning:
+```bash
+cd terraform/
+terraform init
+terraform plan
+terraform apply
+```
+
+---
+
+## Author
+
+**Rahul Kumar** — DevSecOps engineer-in-training, BTech CSE @ IKGPTU  
+[LinkedIn](https://linkedin.com/in/rahulkumar297) · [GitHub](https://github.com/Rahulkumar240)
+
+---
+
+## License
+
+MIT License
